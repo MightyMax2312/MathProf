@@ -2,64 +2,45 @@ import json
 import requests
 import re
 from typing import TypedDict, List, Dict, Any
-
-# --- LLM & RAG COMPONENTS ---
 from langchain_ollama import ChatOllama, OllamaEmbeddings 
 from langchain_chroma import Chroma                         
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage
 from langchain_core.prompts import PromptTemplate
-
-# --- AGENT ORCHESTRATION & TOOLS ---
 from langgraph.graph import StateGraph, END, START 
 from ddgs import DDGS  
 from bs4 import BeautifulSoup       
-
-# --- SELF-CORRECTION (DSPy Bonus) ---
 import dspy                         
 
-# --- CONFIGURATION ---
 LLM_MODEL = "granite4:3b"
 KB_EMBED_MODEL = "nomic-embed-text" 
 CHROMA_PATH = "./chroma_db"
 COLLECTION_NAME = "math_problems"
 
-# Initialize Core Components
 LLM = ChatOllama(model=LLM_MODEL, temperature=0.0)
 embeddings = OllamaEmbeddings(model=KB_EMBED_MODEL)
 
-# --- Math Formatting Fix ---
 def clean_math_text(text: str) -> str:
     """Normalize and clean math expressions for proper LaTeX rendering."""
     if not text:
         return text
 
-    # Strip bold or strong HTML tags
     text = re.sub(r"<\/?b>", "", text)
     text = re.sub(r"<\/?strong>", "", text)
 
-    # Handle power notations like "x n", "x n+1", "x1+1", etc.
     text = re.sub(r'([xX])\s*([0-9nN\+\-\(\)]+)', r'\1^{\2}', text)
     text = re.sub(r'([xX])([0-9nN\+\-\(\)]+)', r'\1^{\2}', text)
 
-    # Fix missing spaces after integrals or equals for clean layout
     text = re.sub(r'∫', r'\\int ', text)
     text = text.replace("=", " = ")
     text = text.replace("dx", " dx")
     text = text.replace("d x", " dx")
-
-    # Convert / fractions to proper LaTeX fractions
     text = re.sub(r'([0-9])\/([0-9])', r'\\frac{\1}{\2}', text)
-
-    # Add braces around exponents for KaTeX safety
     text = re.sub(r'\^([0-9nN\+\-\(\)]+)', r'^{\1}', text)
-
-    # Add LaTeX math delimiters if not already present
     if not any(tag in text for tag in ["\\(", "\\[", "$"]):
         text = re.sub(r'(\b\d+[\+\-\*/^]\d+\b)', r'\\(\1\\)', text)
 
     return text
 
-# Initialize Retriever (Assuming kb_setup.py has been run)
 try:
     MATH_RETRIEVER = Chroma(
         persist_directory=CHROMA_PATH, 
@@ -72,7 +53,6 @@ except Exception as e:
     MATH_RETRIEVER = None
 
 
-# --- AGENT STATE DEFINITION (LangGraph) ---
 class AgentState(TypedDict):
     question: str
     messages: List[BaseMessage]
@@ -83,7 +63,6 @@ class AgentState(TypedDict):
     final_solution: str
 
 
-# --- DSPy CORE MODULES ---
 class MathSolution(dspy.Signature):
     context = dspy.InputField(desc="Retrieved math content or web text")
     question = dspy.InputField(desc="The student's math question")
@@ -131,7 +110,6 @@ def initialize_dspy():
     return True
 
 
-# --- WEB SEARCH UTILITY ---
 def get_web_search_results(query: str, max_results: int = 3) -> List[str]:
     try:
         search_results = DDGS().text(query, max_results=max_results)
@@ -153,7 +131,6 @@ def get_web_search_results(query: str, max_results: int = 3) -> List[str]:
         return []
 
 
-# --- LANGGRAPH NODE FUNCTIONS ---
 def input_guardrail(state: AgentState):
     print("-> Input Guardrail: Checking Safety/Topic...")
     messages = [
@@ -262,7 +239,6 @@ def refuse_handler(state: AgentState):
     return {"final_solution": state.get('final_solution') or "I cannot answer this question safely or accurately.", "confidence": 0.0}
 
 
-# --- EDGE FUNCTIONS ---
 def decide_next_step(state: AgentState) -> str:
     return 'REFUSE_HANDLER' if state['route'] == 'REFUSE' else 'ROUTER'
 
@@ -287,7 +263,6 @@ def decide_final_output(state: AgentState) -> str:
     return END
 
 
-# --- GRAPH CONSTRUCTION ---
 def build_math_agent_workflow():
     workflow = StateGraph(AgentState)
     workflow.add_node("input_guardrail", input_guardrail)
@@ -313,7 +288,6 @@ def build_math_agent_workflow():
     return workflow.compile()
 
 
-# --- MAIN TEST ---
 if __name__ == "__main__":
     print("Building Math Agent Workflow...")
     agent = build_math_agent_workflow()
