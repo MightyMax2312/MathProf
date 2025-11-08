@@ -206,7 +206,6 @@ Instructions:
         response = LLM.invoke(messages)
         solution_message = clean_math_text(response.content)
 
-        # Confidence scoring
         word_count = len(solution_message.split())
         has_steps = any(str(i) in solution_message for i in range(1, 6))
         has_final_answer = "final answer" in solution_message.lower() or "answer:" in solution_message.lower()
