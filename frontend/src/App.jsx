@@ -40,25 +40,22 @@ const App = () => {
     }
   };
 
-  // --- KaTeX rendering and proper tag cleanup ---
   useEffect(() => {
     const container = document.getElementById("solution-content");
     if (container && solution) {
       try {
         let cleaned = solution
-          .replace(/\\\\/g, "\\") // unescape LaTeX
-          .replace(/^#+\s?/gm, "") // remove markdown headers
-          .replace(/\*/g, "") // remove markdown asterisks
-          .replace(/\n{2,}/g, "<br><br>") // normalize double newlines
+          .replace(/\\\\/g, "\\") 
+          .replace(/^#+\s?/gm, "") 
+          .replace(/\*/g, "") 
+          .replace(/\n{2,}/g, "<br><br>") 
           .trim();
 
-        // render with selective <strong> cleanup in math
         const rendered = cleaned.replace(
           /\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)/g,
           (_, displayMath, inlineMath) => {
             let mathContent = displayMath || inlineMath;
 
-            // remove both <b> and <strong> tags INSIDE math only
             mathContent = mathContent
               .replace(/<b>|<\/b>/gi, "")
               .replace(/<strong>|<\/strong>/gi, "");
