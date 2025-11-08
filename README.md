@@ -1,5 +1,5 @@
 # MathProf
-# Math Professor Agent 🎓
+
 
 Agentic RAG system for intelligent math problem-solving with multi-source retrieval, powered by local LLMs via Ollama.
 
