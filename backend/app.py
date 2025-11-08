@@ -2,43 +2,29 @@ import os
 import json
 import requests
 from typing import TypedDict, List, Dict, Any, Optional
-
-# Limit GPU memory usage
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 os.environ['OLLAMA_NUM_GPU'] = '1'
-
-# --- LLM & RAG COMPONENTS ---
 from langchain_ollama import ChatOllama, OllamaEmbeddings 
 from langchain_chroma import Chroma                         
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage
 from langchain_core.prompts import PromptTemplate
-
-# --- AGENT ORCHESTRATION & TOOLS ---
 from langgraph.graph import StateGraph, END, START 
 from ddgs import DDGS  
 from bs4 import BeautifulSoup       
-
-# --- SELF-CORRECTION (DSPy Bonus) ---
 import dspy                         
-
-# --- FASTAPI ---
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-# --- CONFIGURATION ---
 LLM_MODEL = "granite4:3b"
 KB_EMBED_MODEL = "nomic-embed-text" 
 CHROMA_PATH = "./chroma_db"
 COLLECTION_NAME = "math_problems"
 
-# Initialize Core Components (Lazy Initialization)
 LLM = ChatOllama(model=LLM_MODEL, temperature=0.0)
 MATH_RETRIEVER = None
 DSPY_GENERATOR = None
 
-
-# --- AGENT STATE DEFINITION (LangGraph) ---
 class AgentState(TypedDict):
     question: str
     messages: List[BaseMessage]
@@ -49,7 +35,6 @@ class AgentState(TypedDict):
     final_solution: str
 
 
-# --- DSPy CORE MODULES ---
 class MathSolution(dspy.Signature):
     """
     Given the provided context and a student's mathematical question, 
@@ -98,13 +83,11 @@ def get_dspy_generator():
     return DSPY_GENERATOR
 
   
-# --- UTILITY FUNCTIONS ---
 def get_retriever(llm_embeddings=None):
     """Initializes and returns the ChromaDB retriever."""
     global MATH_RETRIEVER
     if MATH_RETRIEVER is None:
         try:
-            # Force embeddings to use CPU to avoid GPU memory conflicts
             embeddings_cpu = OllamaEmbeddings(
                 model=KB_EMBED_MODEL,
                 base_url="http://localhost:11434"
@@ -146,7 +129,6 @@ def get_web_search_results(query: str, max_results: int = 3) -> List[str]:
         return []
 
 
-# --- LANGGRAPH NODE FUNCTIONS ---
 def input_guardrail(state: AgentState):
     """Node 1: Checks for MATH topic and safety."""
     print("-> Input Guardrail: Checking Safety/Topic...")
@@ -219,7 +201,6 @@ def generation_agent(state: AgentState):
     if not context_str:
         return {"final_solution": "Could not find enough relevant information.", "confidence": 0.0}
 
-    # Use direct LLM call (more reliable than DSPy)
     try:
         messages = [
             SystemMessage(content=f"""You are an expert math tutor. Using the context provided, generate a clear, step-by-step solution to the student's question.
@@ -238,12 +219,10 @@ Instructions:
         response = LLM.invoke(messages)
         solution_message = response.content
         
-        # Check solution quality for confidence scoring
         word_count = len(solution_message.split())
         has_steps = any(str(i) in solution_message for i in range(1, 6))
         has_final_answer = "final answer" in solution_message.lower() or "answer:" in solution_message.lower()
         
-        # Calculate confidence
         if word_count > 50 and has_steps and has_final_answer:
             confidence = 0.95
         elif word_count > 30 and has_steps:
@@ -275,7 +254,6 @@ def refuse_handler(state: AgentState):
     return {"final_solution": state.get('final_solution') or "I cannot answer this question safely or accurately.", "confidence": 0.0}
 
 
-# --- EDGE/CONDITIONAL FUNCTIONS ---
 def decide_next_step(state: AgentState) -> str:
     """Routing from Input Guardrail to Router."""
     if state['route'] == 'REFUSE':
@@ -314,7 +292,6 @@ def decide_final_output(state: AgentState) -> str:
     return 'FINAL_OUTPUT'
 
 
-# --- GRAPH CONSTRUCTION ---
 def build_math_agent_workflow():
     workflow = StateGraph(AgentState)
 
@@ -365,7 +342,6 @@ def build_math_agent_workflow():
     return workflow.compile()
 
 
-# --- FASTAPI APPLICATION ---
 def test_ollama_connection():
     """Test if Ollama is running and the model is available."""
     try:
@@ -382,19 +358,15 @@ def test_ollama_connection():
         return False
 
 
-# Test connection on startup
 test_ollama_connection()
 
-# Build the workflow
 math_agent = build_math_agent_workflow()
 
-# Create FastAPI app
 app = FastAPI(title="MathProf API")
 
-# Add CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify your frontend URL
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
