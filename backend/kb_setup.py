@@ -1,15 +1,12 @@
-# ~/MathProf/backend/kb_setup.py
 import json
 import os
 from langchain_ollama import OllamaEmbeddings
 from langchain_chroma import Chroma
 
-# --- CONFIGURATION ---
 COLLECTION_NAME = "math_problems"
 CHROMA_PATH = "./chroma_db"
 EMBEDDING_MODEL = "nomic-embed-text" 
 
-# --- INITIAL DATA (This mimics your Math Dataset) ---
 INITIAL_DATA = [
     {
         "question": "Solve for x in the equation 2x + 5 = 15.",
@@ -33,16 +30,13 @@ def create_kb():
 
     print("Loading data for KB indexing...")
     
-    # Extract documents (solutions) and metadata (questions)
     documents = [item['solution'] for item in INITIAL_DATA]
     metadatas = [{"question": item['question']} for item in INITIAL_DATA]
     
     print(f"Using embedding model: {EMBEDDING_MODEL}")
     
-    # Initialize Ollama Embeddings (Ensure 'nomic-embed-text' is pulled via `ollama pull nomic-embed-text`)
     embeddings = OllamaEmbeddings(model=EMBEDDING_MODEL)
 
-    # Create ChromaDB store and persist to disk
     Chroma.from_texts(
         texts=documents,
         embedding=embeddings,
@@ -53,7 +47,6 @@ def create_kb():
     print(f"✅ Knowledge Base created successfully at {CHROMA_PATH}")
 
 if __name__ == "__main__":
-    # Create math_data.json if it doesn't exist (optional, data is in script)
     with open("math_data.json", 'w') as f:
         json.dump(INITIAL_DATA, f, indent=4)
         
