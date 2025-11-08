@@ -17,7 +17,7 @@ const App = () => {
     if (!question.trim()) return;
 
     setLoading(true);
-    setSolution("Analyzing problem via Agentic RAG architecture...");
+    setSolution("Analyzing problem...");
     setSource("");
     setConfidence(0.0);
     setStatusNote("");
