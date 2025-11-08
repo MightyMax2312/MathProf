@@ -49,9 +49,10 @@ ollama pull nomic-embed-text
 ```
 
 ### 4. Install Python Dependencies
+```
 cd backend
 pip install -r requirements.txt
-
+```
 ### 5. Install Node.js
 Requires Node.js 16+ for the React frontend.
 
@@ -104,7 +105,6 @@ Frontend runs on `http://localhost:5173`
 │   ├── agent_logic.py       # LangGraph workflow + DSPy
 │   ├── kb_setup.py          # Vector DB initialization
 │   ├── chroma_db/           # Persistent vector store
-│   └── math_data.json       # Sample dataset
 ├── frontend/
 │   ├── src/
 │   │   └── App.jsx          # React UI with KaTeX
@@ -137,7 +137,7 @@ python kb_setup.py
 
 ## How It Works
 
-1. **Input Guardrail**: Validates math-related queries
+1. **Input Guardrail**: Validates math-related queries or general day-to-day queries
 2. **Router Agent**: Decides between KB retrieval or web search
 3. **Retrieval**: Fetches context from ChromaDB or DuckDuckGo
 4. **Generation**: LLM creates step-by-step solution
