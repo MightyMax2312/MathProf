@@ -1,0 +1,14 @@
+[
+    {
+        "question": "Solve for x in the equation 2x + 5 = 15.",
+        "solution": "1. Subtract 5 from both sides: 2x = 10.\n2. Divide both sides by 2: x = 5.\n3. The final answer is x=5. This is a simple linear algebra problem."
+    },
+    {
+        "question": "What is the formula for calculating the area of a trapezoid?",
+        "solution": "The area (A) of a trapezoid is calculated by adding the two parallel sides (a and b), dividing by two, and then multiplying by the height (h). Formula: A = (1/2) * (a + b) * h. This formula is derived from splitting the trapezoid into two triangles and a rectangle."
+    },
+    {
+        "question": "Find the derivative of f(x) = x^3.",
+        "solution": "1. Apply the power rule: d/dx(x^n) = n*x^(n-1).\n2. Set n=3: d/dx(x^3) = 3 * x^(3-1).\n3. The derivative is 3x^2. This is a fundamental concept in single-variable calculus."
+    }
+]
